@@ -1,0 +1,77 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.jvnet.jaxb2_commons</groupId>
+	<artifactId>jaxb2-namespace-prefix</artifactId>
+	<packaging>jar</packaging>
+
+	<version>1.0-SNAPSHOT</version>
+
+	<name>JAXB2 - Namespace Prefix Plugin</name>
+
+	<description>
+		This plugin adds 'javax.xml.bind.annotation.XmlNs' annotations to 'package-info.java' file according to
+		an external mapping file. Those annotations associate namespace prefixes with XML namespace URIs.
+	</description>
+
+	<licenses>
+		<license>
+			<name>The Apache Software License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+
+	<developers>
+		<developer>
+			<name>Manuel Siggen</name>
+			<email>manuel.siggen@vd.ch</email>
+			<organization>Etat de Vaud, Département des infrastructures, Direction des systèmes d'information (DSI)</organization>
+			<organizationUrl>http://www.vd.ch</organizationUrl>
+		</developer>
+	</developers>
+
+	<scm>
+		<connection>scm:svn:https://svn.java.net/svn/jaxb2-commons~svn/namespace-prefix/trunk</connection>
+		<developerConnection>scm:svn:https://svn.java.net/svn/jaxb2-commons~svn/namespace-prefix/trunk</developerConnection>
+		<url>http://java.net/projects/jaxb2-commons/sources/svn/show/namespace-prefix/trunk</url>
+	</scm>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.sun.xml.bind</groupId>
+			<artifactId>jaxb-xjc</artifactId>
+			<version>2.1.13</version>
+			<scope>provided</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<inherited>true</inherited>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<configuration>
+						<source>1.6</source>
+						<target>1.6</target>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+		<plugins>
+			<plugin>
+				<artifactId>maven-source-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-source</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>
