@@ -163,7 +163,7 @@ public class NamespacePrefixPlugin extends Plugin {
 	@SuppressWarnings("unchecked")
 	private static JAnnotationUse getXmlSchemaAnnotation(JPackage p, JClass xmlSchemaClass) {
 		try {
-			final Field annotationsField = p.getClass().getDeclaredField("annotations");
+			final Field annotationsField = JPackage.class.getDeclaredField("annotations");
 			annotationsField.setAccessible(true);
 			final List<JAnnotationUse> annotations = (List<JAnnotationUse>) annotationsField.get(p);
 			if (annotations != null) {
@@ -174,10 +174,12 @@ public class NamespacePrefixPlugin extends Plugin {
 					}
 				}
 			}
-
 		}
-		catch (Exception e) {
-			throw new RuntimeException("Class [" + p.getClass().getName() + "] : " + e.getMessage(), e);
+		catch (IllegalAccessException e) {
+			throw new RuntimeException("Unable to access 'annotation' field for package [" + p.name() + "] : " + e.getMessage(), e);
+		}
+		catch (NoSuchFieldException e) {
+			throw new RuntimeException("Unable to find 'annotation' field for package [" + p.name() + "] : " + e.getMessage(), e);
 		}
 		return null;
 	}
