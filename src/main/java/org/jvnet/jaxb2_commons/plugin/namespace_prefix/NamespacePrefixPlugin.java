@@ -134,20 +134,21 @@ public class NamespacePrefixPlugin extends Plugin {
 		for (PackageOutline packageOutline : outline.getAllPackageContexts()) {
 			final JPackage p = packageOutline._package();
 
-			// is there is defined mapping for the package ?
+			// is there a defined mapping for the package ?
 			final List<Pair> list = prefixMapping.get(p.name());
 			if (list == null || list.isEmpty()) {
 				continue;
 			}
 
 			// if so, add wanted annotations
-			final JAnnotationUse xmlSchemaAnnotation = getXmlSchemaAnnotation(p, xmlSchemaClass);
-			if (xmlSchemaAnnotation != null) {
-				final JAnnotationArrayMember members = xmlSchemaAnnotation.paramArray("xmlns");
+			final JAnnotationUse xmlSchemaAnnotation = getOrAddXmlSchemaAnnotation(p, xmlSchemaClass);
+			if (xmlSchemaAnnotation == null) {
+				throw new RuntimeException("Unable to get/add 'XmlSchema' annotation to package [" + p.name() + "]");
+			}
 
-				for (Pair pair : list) {
-					addNamespacePrefix(xmlNsClass, members, pair.getNamespace(), pair.getPrefix());
-				}
+			final JAnnotationArrayMember members = xmlSchemaAnnotation.paramArray("xmlns");
+			for (Pair pair : list) {
+				addNamespacePrefix(xmlNsClass, members, pair.getNamespace(), pair.getPrefix());
 			}
 		}
 
@@ -161,19 +162,36 @@ public class NamespacePrefixPlugin extends Plugin {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static JAnnotationUse getXmlSchemaAnnotation(JPackage p, JClass xmlSchemaClass) {
+	private static JAnnotationUse getOrAddXmlSchemaAnnotation(JPackage p, JClass xmlSchemaClass) {
+
+		JAnnotationUse xmlAnn = null;
+
+		final List<JAnnotationUse> annotations = getAnnotations(p);
+		if (annotations != null) {
+			for (JAnnotationUse annotation : annotations) {
+				final JClass clazz = getAnnotatedJClass(annotation);
+				if (clazz == xmlSchemaClass) {
+					xmlAnn = annotation;
+					break;
+				}
+			}
+		}
+
+		if (xmlAnn == null) {
+			// XmlSchema annotation not found, let's add one
+			xmlAnn = p.annotate(xmlSchemaClass);
+		}
+
+		return xmlAnn;
+	}
+
+	@SuppressWarnings("unchecked")
+	private static List<JAnnotationUse> getAnnotations(JPackage p) {
+		// TODO bump jaxb-xjc dependency to version >= 2.2.2 and use the annotations() method instead.
 		try {
 			final Field annotationsField = JPackage.class.getDeclaredField("annotations");
 			annotationsField.setAccessible(true);
-			final List<JAnnotationUse> annotations = (List<JAnnotationUse>) annotationsField.get(p);
-			if (annotations != null) {
-				for (JAnnotationUse annotation : annotations) {
-					final JClass clazz = getAnnotatedJClass(annotation);
-					if (clazz == xmlSchemaClass) {
-						return annotation;
-					}
-				}
-			}
+			return (List<JAnnotationUse>) annotationsField.get(p);
 		}
 		catch (IllegalAccessException e) {
 			throw new RuntimeException("Unable to access 'annotation' field for package [" + p.name() + "] : " + e.getMessage(), e);
@@ -181,13 +199,20 @@ public class NamespacePrefixPlugin extends Plugin {
 		catch (NoSuchFieldException e) {
 			throw new RuntimeException("Unable to find 'annotation' field for package [" + p.name() + "] : " + e.getMessage(), e);
 		}
-		return null;
 	}
 
-	private static JClass getAnnotatedJClass(JAnnotationUse annotation) throws NoSuchFieldException, IllegalAccessException {
-		final Field clazzField = annotation.getClass().getDeclaredField("clazz");
-		clazzField.setAccessible(true);
-		return (JClass) clazzField.get(annotation);
+	private static JClass getAnnotatedJClass(JAnnotationUse annotation) {
+		try {
+			final Field clazzField = JAnnotationUse.class.getDeclaredField("clazz");
+			clazzField.setAccessible(true);
+			return (JClass) clazzField.get(annotation);
+		}
+		catch (IllegalAccessException e) {
+			throw new RuntimeException("Unable to access 'clazz' field for class [JAnnotationUse] : " + e.getMessage(), e);
+		}
+		catch (NoSuchFieldException e) {
+			throw new RuntimeException("Unable to find 'annotation' field for class [JAnnotationUse] : " + e.getMessage(), e);
+		}
 	}
 
 	private static class Pair {
