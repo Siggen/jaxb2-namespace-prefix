@@ -9,10 +9,18 @@
 
 	<name>JAXB2 - Namespace Prefix Plugin</name>
 
+	<url>http://java.net/projects/jaxb2-commons/pages/namespace-prefix</url>
+
 	<description>
 		This plugin adds 'javax.xml.bind.annotation.XmlNs' annotations to 'package-info.java' file according to
 		an external mapping file. Those annotations associate namespace prefixes with XML namespace URIs.
 	</description>
+
+	<parent>
+		<groupId>org.sonatype.oss</groupId>
+		<artifactId>oss-parent</artifactId>
+		<version>7</version>
+	</parent>
 
 	<licenses>
 		<license>
@@ -67,6 +75,19 @@
 						<id>attach-source</id>
 						<goals>
 							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-gpg-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>sign-artifacts</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>sign</goal>
 						</goals>
 					</execution>
 				</executions>
