@@ -155,7 +155,7 @@ public class NamespacePrefixPlugin extends Plugin {
 	}
 
 	private static void addNamespacePrefix(JClass xmlNsClass, JAnnotationArrayMember members, String namespace, String prefix) {
-		JAnnotationUse ns = members.annotate(xmlNsClass);
+		final JAnnotationUse ns = members.annotate(xmlNsClass);
 		ns.param("namespaceURI", namespace);
 		ns.param("prefix", prefix);
 	}
@@ -189,8 +189,8 @@ public class NamespacePrefixPlugin extends Plugin {
 	}
 
 	private static class Pair {
-		private String namespace;
-		private String prefix;
+		private final String namespace;
+		private final String prefix;
 
 		private Pair(String namespace, String prefix) {
 			this.namespace = namespace;
