@@ -13,7 +13,7 @@
 
 	<description>
 		This plugin adds 'javax.xml.bind.annotation.XmlNs' annotations to 'package-info.java' file according to
-		an external mapping file. Those annotations associate namespace prefixes with XML namespace URIs.
+		specific definitions in bindings.xml file. Those annotations associate namespace prefixes with XML namespace URIs.
 	</description>
 
 	<parent>

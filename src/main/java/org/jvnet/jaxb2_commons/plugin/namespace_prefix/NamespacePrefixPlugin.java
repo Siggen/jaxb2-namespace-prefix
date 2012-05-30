@@ -2,55 +2,63 @@ package org.jvnet.jaxb2_commons.plugin.namespace_prefix;
 
 import javax.xml.bind.annotation.XmlNs;
 import javax.xml.bind.annotation.XmlSchema;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 
 import com.sun.codemodel.JAnnotationArrayMember;
 import com.sun.codemodel.JAnnotationUse;
+import com.sun.codemodel.JAnnotationValue;
 import com.sun.codemodel.JClass;
 import com.sun.codemodel.JPackage;
-import com.sun.tools.xjc.BadCommandLineException;
+import com.sun.codemodel.JStringLiteral;
 import com.sun.tools.xjc.Options;
 import com.sun.tools.xjc.Plugin;
+import com.sun.tools.xjc.generator.bean.PackageOutlineImpl;
+import com.sun.tools.xjc.model.CCustomizations;
+import com.sun.tools.xjc.model.CPluginCustomization;
+import com.sun.tools.xjc.model.Model;
 import com.sun.tools.xjc.outline.Outline;
 import com.sun.tools.xjc.outline.PackageOutline;
+import com.sun.tools.xjc.reader.xmlschema.bindinfo.BIDeclaration;
+import com.sun.tools.xjc.reader.xmlschema.bindinfo.BIXPluginCustomization;
+import com.sun.tools.xjc.reader.xmlschema.bindinfo.BindInfo;
+import com.sun.xml.xsom.XSAnnotation;
+import com.sun.xml.xsom.XSSchema;
+import com.sun.xml.xsom.impl.SchemaImpl;
 import org.xml.sax.ErrorHandler;
 
 /**
- * This plugin adds {@link javax.xml.bind.annotation.XmlNs} annotations to <i>package-info.java</i> file according to an external mapping file. Those annotations associate namespace prefixes with XML
+ * This plugin adds {@link javax.xml.bind.annotation.XmlNs} annotations to <i>package-info.java</i> file according to <i>bindings.xml</i> file. Those annotations associate namespace prefixes with XML
  * namespace URIs.
  * <p/>
- * External mapping file format is the following:
+ * Bindings.xml file example:
  * <pre>
- *     [fully.qualified.package.name]
- *     XML-namespace-URI=prefix
- * </pre>
- * <p/>
- * Example:
- * <pre>
- *     [ch.ech.ech0006]
- *     http://www.ech.ch/xmlns/eCH-0006/1=eCH-0006-1
- *     http://www.ech.ch/xmlns/eCH-0006/2=eCH-0006-2
+ *  &lt;?xml version=&quot;1.0&quot;?&gt;
+ *  &lt;jxb:bindings version=&quot;2.1&quot;
+ *      xmlns:jxb=&quot;http://java.sun.com/xml/ns/jaxb&quot;
+ *      xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
+ *      xmlns:namespace=&quot;http://jaxb2-commons.dev.java.net/namespace-prefix&quot;&gt;
  *
- *     [ch.ech.ech0007]
- *     http://www.ech.ch/xmlns/eCH-0007/3=eCH-0007-3
+ *      &lt;jxb:bindings schemaLocation=&quot;unireg-common-1.xsd&quot;&gt;
+ *          &lt;jxb:schemaBindings&gt;
+ *              &lt;jxb:package name=&quot;ch.vd.unireg.xml.common.v1&quot; /&gt;
+ *          &lt;/jxb:schemaBindings&gt;
+ *          &lt;jxb:bindings&gt;
+ *              <b>&lt;namespace:prefix name=&quot;common-1&quot; /&gt;</b>
+ *          &lt;/jxb:bindings&gt;
+ *      &lt;/jxb:bindings&gt;
  *
- *     ...
+ *  &lt;/jxb:bindings&gt;
  * </pre>
  *
  * @author Manuel Siggen (c) 2012 Etat-de-Vaud (www.vd.ch)
  */
-@SuppressWarnings({"UnusedDeclaration"})
 public class NamespacePrefixPlugin extends Plugin {
 
-	private Map<String, List<Pair>> prefixMapping = new HashMap<String, List<Pair>>();
+	private static final String NAMESPACE_URI = "http://jaxb2-commons.dev.java.net/namespace-prefix";
 
 	@Override
 	public String getOptionName() {
@@ -59,70 +67,17 @@ public class NamespacePrefixPlugin extends Plugin {
 
 	@Override
 	public String getUsage() {
-		return "  -Xnamespace-prefix    :  activate namespaces prefix customizations\n" +
-				"  -Xnamespace-prefix-file:<prefixmappingfile>    :  specify prefix mapping file";
+		return "-Xnamespace-prefix : activate namespaces prefix customizations";
 	}
 
 	@Override
-	public int parseArgument(Options opt, String[] args, int i) throws BadCommandLineException, IOException {
-		final String argument = args[i];
-		if (argument.startsWith("-Xnamespace-prefix-file")) {
-			final String filename = argument.split(":")[1];
-			prefixMapping = parseMapping(filename);
-			return 1;
-		}
-		return 0;
+	public List<String> getCustomizationURIs() {
+		return Arrays.asList(NAMESPACE_URI);
 	}
 
-	/**
-	 * Parse the mapping file.
-	 * <p/>
-	 * Format is :
-	 * <pre>
-	 * [ch.vd.fully.qualified.package.name]
-	 *     http://www.vd.ch/namespace/1=prefix-1
-	 *     http://www.vd.ch/namespace/2=prefix-2
-	 *
-	 * [ch.vd.other.fully.qualified.package.name]
-	 *     http://www.vd.ch/other/namespace/1=other-1
-	 *     http://www.vd.ch/other/namespace/2=other-2
-	 * </pre>
-	 *
-	 * @param filename file name of prefix mapping file
-	 * @return the parsed mapping
-	 * @throws FileNotFoundException
-	 */
-	private static Map<String, List<Pair>> parseMapping(String filename) throws FileNotFoundException {
-
-		final Map<String, List<Pair>> map = new HashMap<String, List<Pair>>();
-
-		List<Pair> list = null;
-
-		Scanner scanner = null;
-		try {
-			scanner = new Scanner(new File(filename));
-			while (scanner.hasNext()) {
-				final String token = scanner.next();
-				if (token.charAt(0) == '[') { // got a package name
-					final String packageName = token.replaceAll("[\\[\\]]", "");
-					list = new ArrayList<Pair>();
-					map.put(packageName, list);
-				}
-				else if (list != null) { // got a couple namespace/prefix
-					final String[] line = token.split("=");
-					final String namespace = line[0];
-					final String prefix = line[1];
-					list.add(new Pair(namespace, prefix));
-				}
-			}
-		}
-		finally {
-			if (scanner != null) {
-				scanner.close();
-			}
-		}
-
-		return map;
+	@Override
+	public boolean isCustomizationTagName(String nsUri, String localName) {
+		return NAMESPACE_URI.equals(nsUri) && "prefix".equals(localName);
 	}
 
 	@Override
@@ -134,13 +89,18 @@ public class NamespacePrefixPlugin extends Plugin {
 		for (PackageOutline packageOutline : outline.getAllPackageContexts()) {
 			final JPackage p = packageOutline._package();
 
-			// is there a defined mapping for the package ?
-			final List<Pair> list = prefixMapping.get(p.name());
+			// get the package prefix bindings, if any
+			final String packageNamespace = getPackageNamespace(xmlSchemaClass, p);
+			final Model packageModel = getPackageModel((PackageOutlineImpl) packageOutline);
+			final List<Pair> list = getPrefixBinding(packageModel, packageNamespace);
+			acknowledgePrefixAnnotations(packageModel);
+
 			if (list == null || list.isEmpty()) {
+				// nothing to do
 				continue;
 			}
 
-			// if so, add wanted annotations
+			// add XML namespace prefix annotations
 			final JAnnotationUse xmlSchemaAnnotation = getOrAddXmlSchemaAnnotation(p, xmlSchemaClass);
 			if (xmlSchemaAnnotation == null) {
 				throw new RuntimeException("Unable to get/add 'XmlSchema' annotation to package [" + p.name() + "]");
@@ -153,6 +113,95 @@ public class NamespacePrefixPlugin extends Plugin {
 		}
 
 		return true;
+	}
+
+	private static String getPackageNamespace(JClass xmlSchemaClass, JPackage p) {
+		String packageNamespace = "";
+		final List<JAnnotationUse> anno = getAnnotations(p);
+		if (anno != null) {
+			for (JAnnotationUse a : anno) {
+				final JClass clazz = getAnnotationJClass(a);
+				if (clazz == xmlSchemaClass) {
+					final Map<String, JAnnotationValue> members = getAnnotationMemberValues(a);
+					JAnnotationValue val = members.get("namespace");
+					packageNamespace = getStringAnnotationValue(val);
+				}
+			}
+		}
+		return packageNamespace;
+	}
+
+	/**
+	 * Make sure the prefix annotations have been acknowledged.
+	 *
+	 * @param packageModel the package model
+	 */
+	private void acknowledgePrefixAnnotations(Model packageModel) {
+		final CCustomizations customizations = packageModel.getCustomizations();
+		if (customizations != null) {
+			for (CPluginCustomization customization : customizations) {
+				if (customization.element.getNamespaceURI().equals(NAMESPACE_URI)) {
+					if (!customization.element.getLocalName().equals("prefix")) {
+						throw new RuntimeException("Unrecognized element [" + customization.element.getLocalName() + "]");
+					}
+					customization.markAsAcknowledged();
+				}
+			}
+		}
+	}
+
+	/**
+	 * This method detects prefixes for a given package as specified in the bindings file. Usually, there is only one namespace per package, but there may be more.
+	 *
+	 * @param packageModel     the package model
+	 * @param packageNamespace the target namespace for the package
+	 * @return the prefix annotations
+	 */
+	private static List<Pair> getPrefixBinding(Model packageModel, String packageNamespace) {
+
+		final List<Pair> list = new ArrayList<Pair>();
+
+		// loop on existing schemas (XSD files)
+		for (XSSchema schema : packageModel.schemaComponent.getSchemas()) {
+
+			final SchemaImpl s = (SchemaImpl) schema;
+			final XSAnnotation annotation = s.getAnnotation();
+			if (annotation == null) {
+				continue;
+			}
+
+			final Object anno = annotation.getAnnotation();
+			if (anno == null || !(anno instanceof BindInfo)) {
+				continue;
+			}
+
+			final BindInfo b = (BindInfo) anno;
+			final String targetNS = b.getOwner().getOwnerSchema().getTargetNamespace();
+
+			if (!packageNamespace.equals(targetNS)) { // only return prefix bindings that matches the current package
+				continue;
+			}
+
+			// get the prefix's name
+			String prefix = "";
+			for (BIDeclaration declaration : b.getDecls()) {
+				if (declaration instanceof BIXPluginCustomization) {
+					final BIXPluginCustomization customization = (BIXPluginCustomization) declaration;
+					if (customization.element.getNamespaceURI().equals(NAMESPACE_URI)) {
+						if (!customization.element.getLocalName().equals("prefix")) {
+							throw new RuntimeException("Unrecognized element [" + customization.element.getLocalName() + "]");
+						}
+						prefix = customization.element.getAttribute("name");
+						customization.markAsAcknowledged();
+						break;
+					}
+				}
+			}
+
+			list.add(new Pair(targetNS, prefix));
+		}
+
+		return list;
 	}
 
 	private static void addNamespacePrefix(JClass xmlNsClass, JAnnotationArrayMember members, String namespace, String prefix) {
@@ -169,7 +218,7 @@ public class NamespacePrefixPlugin extends Plugin {
 		final List<JAnnotationUse> annotations = getAnnotations(p);
 		if (annotations != null) {
 			for (JAnnotationUse annotation : annotations) {
-				final JClass clazz = getAnnotatedJClass(annotation);
+				final JClass clazz = getAnnotationJClass(annotation);
 				if (clazz == xmlSchemaClass) {
 					xmlAnn = annotation;
 					break;
@@ -183,6 +232,20 @@ public class NamespacePrefixPlugin extends Plugin {
 		}
 
 		return xmlAnn;
+	}
+
+	private static Model getPackageModel(PackageOutlineImpl packageOutline) {
+		try {
+			final Field field = PackageOutlineImpl.class.getDeclaredField("_model");
+			field.setAccessible(true);
+			return (Model) field.get(packageOutline);
+		}
+		catch (NoSuchFieldException e) {
+			throw new RuntimeException("Unable to access '_model' field for package outline [" + packageOutline._package().name() + "] : " + e.getMessage(), e);
+		}
+		catch (IllegalAccessException e) {
+			throw new RuntimeException("Unable to find '_model' field for package outline [" + packageOutline._package().name() + "] : " + e.getMessage(), e);
+		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -201,7 +264,7 @@ public class NamespacePrefixPlugin extends Plugin {
 		}
 	}
 
-	private static JClass getAnnotatedJClass(JAnnotationUse annotation) {
+	private static JClass getAnnotationJClass(JAnnotationUse annotation) {
 		try {
 			final Field clazzField = JAnnotationUse.class.getDeclaredField("clazz");
 			clazzField.setAccessible(true);
@@ -212,6 +275,36 @@ public class NamespacePrefixPlugin extends Plugin {
 		}
 		catch (NoSuchFieldException e) {
 			throw new RuntimeException("Unable to find 'annotation' field for class [JAnnotationUse] : " + e.getMessage(), e);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private static Map<String, JAnnotationValue> getAnnotationMemberValues(JAnnotationUse annotation) {
+		try {
+			final Field clazzField = JAnnotationUse.class.getDeclaredField("memberValues");
+			clazzField.setAccessible(true);
+			return (Map<String, JAnnotationValue>) clazzField.get(annotation);
+		}
+		catch (IllegalAccessException e) {
+			throw new RuntimeException("Unable to access 'memberValues' field for class [JAnnotationUse] : " + e.getMessage(), e);
+		}
+		catch (NoSuchFieldException e) {
+			throw new RuntimeException("Unable to find 'memberValues' field for class [JAnnotationUse] : " + e.getMessage(), e);
+		}
+	}
+
+	private static String getStringAnnotationValue(JAnnotationValue val) {
+		try {
+			final Field clazzField = val.getClass().getDeclaredField("value");
+			clazzField.setAccessible(true);
+			final JStringLiteral j = (JStringLiteral) clazzField.get(val);
+			return j == null ? null : j.str;
+		}
+		catch (IllegalAccessException e) {
+			throw new RuntimeException("Unable to access 'value' field for class [" + val.getClass() + "] : " + e.getMessage(), e);
+		}
+		catch (NoSuchFieldException e) {
+			throw new RuntimeException("Unable to find 'value' field for class [" + val.getClass() + "] : " + e.getMessage(), e);
 		}
 	}
 
