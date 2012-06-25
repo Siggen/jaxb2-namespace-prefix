@@ -5,7 +5,7 @@
 	<artifactId>jaxb2-namespace-prefix</artifactId>
 	<packaging>jar</packaging>
 
-	<version>1.1-SNAPSHOT</version>
+	<version>1.1</version>
 
 	<name>JAXB2 - Namespace Prefix Plugin</name>
 
