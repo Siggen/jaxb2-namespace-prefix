@@ -5,8 +5,10 @@ import javax.xml.bind.annotation.XmlSchema;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.sun.codemodel.JAnnotationArrayMember;
 import com.sun.codemodel.JAnnotationUse;
@@ -31,8 +33,8 @@ import com.sun.xml.xsom.impl.SchemaImpl;
 import org.xml.sax.ErrorHandler;
 
 /**
- * This plugin adds {@link javax.xml.bind.annotation.XmlNs} annotations to <i>package-info.java</i> file according to <i>bindings.xml</i> file. Those annotations associate namespace prefixes with XML
- * namespace URIs.
+ * This plugin adds {@link javax.xml.bind.annotation.XmlNs} annotations to <i>package-info.java</i> files. Those annotations tells Jaxb2 to generate XML schema's instances with specific namespaces
+ * prefixes, instead of the auto-generated (ns1, ns2, ...) prefixes. Definition of thoses prefixes is done in the bindings.xml file.
  * <p/>
  * Bindings.xml file example:
  * <pre>
@@ -56,6 +58,7 @@ import org.xml.sax.ErrorHandler;
  *
  * @author Manuel Siggen (c) 2012 Etat-de-Vaud (www.vd.ch)
  */
+@SuppressWarnings("UnusedDeclaration")
 public class NamespacePrefixPlugin extends Plugin {
 
 	private static final String NAMESPACE_URI = "http://jaxb2-commons.dev.java.net/namespace-prefix";
@@ -89,14 +92,16 @@ public class NamespacePrefixPlugin extends Plugin {
 		for (PackageOutline packageOutline : outline.getAllPackageContexts()) {
 			final JPackage p = packageOutline._package();
 
-			// get the package prefix bindings, if any
-			final String packageNamespace = getPackageNamespace(xmlSchemaClass, p);
+			// get the target namespaces of all schemas that bind to the current package
+			final Set<String> packageNamespaces = getPackageNamespace(packageOutline);
+
+			// is there any prefix binding defined for the current package ?
 			final Model packageModel = getPackageModel((PackageOutlineImpl) packageOutline);
-			final List<Pair> list = getPrefixBinding(packageModel, packageNamespace);
+			final List<Pair> list = getPrefixBinding(packageModel, packageNamespaces);
 			acknowledgePrefixAnnotations(packageModel);
 
 			if (list == null || list.isEmpty()) {
-				// nothing to do
+				// no prefix binding, nothing to do
 				continue;
 			}
 
@@ -115,20 +120,9 @@ public class NamespacePrefixPlugin extends Plugin {
 		return true;
 	}
 
-	private static String getPackageNamespace(JClass xmlSchemaClass, JPackage p) {
-		String packageNamespace = "";
-		final List<JAnnotationUse> anno = getAnnotations(p);
-		if (anno != null) {
-			for (JAnnotationUse a : anno) {
-				final JClass clazz = getAnnotationJClass(a);
-				if (clazz == xmlSchemaClass) {
-					final Map<String, JAnnotationValue> members = getAnnotationMemberValues(a);
-					JAnnotationValue val = members.get("namespace");
-					packageNamespace = getStringAnnotationValue(val);
-				}
-			}
-		}
-		return packageNamespace;
+	private static Set<String> getPackageNamespace(PackageOutline packageOutline) {
+		final Map<String, Integer> map = getUriCountMap(packageOutline);
+		return map == null ? Collections.<String>emptySet() : map.keySet();
 	}
 
 	/**
@@ -157,7 +151,7 @@ public class NamespacePrefixPlugin extends Plugin {
 	 * @param packageNamespace the target namespace for the package
 	 * @return the prefix annotations
 	 */
-	private static List<Pair> getPrefixBinding(Model packageModel, String packageNamespace) {
+	private static List<Pair> getPrefixBinding(Model packageModel, Set<String> packageNamespace) {
 
 		final List<Pair> list = new ArrayList<Pair>();
 
@@ -178,7 +172,7 @@ public class NamespacePrefixPlugin extends Plugin {
 			final BindInfo b = (BindInfo) anno;
 			final String targetNS = b.getOwner().getOwnerSchema().getTargetNamespace();
 
-			if (!packageNamespace.equals(targetNS)) { // only return prefix bindings that matches the current package
+			if (!packageNamespace.contains(targetNS)) { // only consider schemas that bind the current package
 				continue;
 			}
 
@@ -232,6 +226,21 @@ public class NamespacePrefixPlugin extends Plugin {
 		}
 
 		return xmlAnn;
+	}
+
+	@SuppressWarnings("unchecked")
+	private static Map<String, Integer> getUriCountMap(PackageOutline packageOutline) {
+		try {
+			final Field field = PackageOutlineImpl.class.getDeclaredField("uriCountMap");
+			field.setAccessible(true);
+			return (Map<String, Integer>) field.get(packageOutline);
+		}
+		catch (NoSuchFieldException e) {
+			throw new RuntimeException("Unable to access 'uriCountMap' field for package outline [" + packageOutline._package().name() + "] : " + e.getMessage(), e);
+		}
+		catch (IllegalAccessException e) {
+			throw new RuntimeException("Unable to find 'uriCountMap' field for package outline [" + packageOutline._package().name() + "] : " + e.getMessage(), e);
+		}
 	}
 
 	private static Model getPackageModel(PackageOutlineImpl packageOutline) {
