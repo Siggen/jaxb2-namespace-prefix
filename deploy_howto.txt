@@ -1,0 +1,48 @@
+To deploy artifacts to OSS sonatype Nexus
+=========================================
+
+Main guide : http://central.sonatype.org/pages/ossrh-guide.html
+Maven configuration : http://central.sonatype.org/pages/apache-maven.html
+Nexus : https://oss.sonatype.org
+
+build
+-----
+
+ $ mvn clean install
+
+
+deploy (snaphots)
+-----------------
+
+ $ mvn clean deploy
+
+The artifact will be uploaded to : https://oss.sonatype.org/content/repositories/snapshots/org/jvnet/jaxb2_commons/
+
+Note: you need to store your sonatype credentials in ~/.m2/settings.xml :
+
+    <server>
+      <id>ossrh</id>
+      <username>...</username>
+      <password>...</password>
+    </server>
+
+deploy (release)
+-----------------
+
+ $ mvn clean deploy -P release
+
+
+inspect release
+---------------
+
+http://central.sonatype.org/pages/releasing-the-deployment.html
+
+
+promote release
+---------------
+
+$ mvn nexus-staging:release
+
+ou
+
+$ mvn nexus-staging:drop
