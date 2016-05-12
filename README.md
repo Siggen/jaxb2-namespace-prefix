@@ -1,5 +1,5 @@
-# jaxb-namespace-prefix
-Jaxb 'namespace-prefix' plugin that adds `javax.xml.bind.annotation.XmlNs` annotations to `package-info.java` file according to 
+# jaxb2-namespace-prefix
+Jaxb2 'namespace-prefix' plugin that adds `javax.xml.bind.annotation.XmlNs` annotations to `package-info.java` file according to 
 specific definition in the bindings.xml file. Those annotations associate namespace prefixes with XML namespace URIs.
 
 
