@@ -40,9 +40,9 @@
 	</developers>
 
 	<scm>
-		<connection>scm:svn:https://svn.java.net/svn/jaxb2-commons~svn/namespace-prefix/trunk</connection>
-		<developerConnection>scm:svn:https://svn.java.net/svn/jaxb2-commons~svn/namespace-prefix/trunk</developerConnection>
-		<url>http://java.net/projects/jaxb2-commons/sources/svn/show/namespace-prefix/trunk</url>
+		<connection>scm:git:https://github.com/Siggen/jaxb-namespace-prefix.git</connection>
+		<developerConnection>scm:git:git@github.com:Siggen/jaxb-namespace-prefix.git</developerConnection>
+		<url>https://github.com/Siggen/jaxb-namespace-prefix</url>
 	</scm>
 
 	<dependencies>
