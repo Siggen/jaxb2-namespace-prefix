@@ -86,7 +86,7 @@ Example of bindings.xml file :
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns:namespace="http://jaxb2-commons.dev.java.net/namespace-prefix"
     xsi:schemaLocation="http://java.sun.com/xml/ns/jaxb http://java.sun.com/xml/ns/jaxb/bindingschema_2_0.xsd
-    http://jaxb2-commons.dev.java.net/namespace-prefix http://java.net/projects/jaxb2-commons/sources/svn/content/namespace-prefix/trunk/src/main/resources/prefix-namespace-schema.xsd">
+    http://jaxb2-commons.dev.java.net/namespace-prefix https://raw.githubusercontent.com/Siggen/jaxb2-namespace-prefix/master/src/main/resources/prefix-namespace-schema.xsd">
 
     <jxb:bindings schemaLocation="eCH-0007-3-0.xsd">
         <jxb:schemaBindings>
