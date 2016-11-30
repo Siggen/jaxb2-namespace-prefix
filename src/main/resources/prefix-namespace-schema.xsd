@@ -7,7 +7,15 @@
 		   jxb:extensionBindingPrefixes="prefix" version="2.1">
 
 	<xs:complexType name="prefixType">
-		<xs:attribute name="name" type="xs:string" />
+		<xs:attribute name="name" type="xs:string" use="required" />
+        <xs:attribute name="namespaceURI" type="xs:anyURI" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    The namespaceURI to be mapped for the prefix. When omitted the namespaceURI will
+                    default to the namespace in use for the package.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
 	</xs:complexType>
 
 	<xs:element name="prefix" type="prefix:prefixType">
@@ -15,5 +23,4 @@
 			<xs:documentation>Prefix for the associated namespace/package.</xs:documentation>
 		</xs:annotation>
 	</xs:element>
-
 </xs:schema>

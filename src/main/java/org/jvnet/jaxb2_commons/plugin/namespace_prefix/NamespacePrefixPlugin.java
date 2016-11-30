@@ -1,14 +1,18 @@
 package org.jvnet.jaxb2_commons.plugin.namespace_prefix;
 
-import javax.xml.bind.annotation.XmlNs;
-import javax.xml.bind.annotation.XmlSchema;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import javax.xml.bind.annotation.XmlNs;
+import javax.xml.bind.annotation.XmlSchema;
+
+import org.xml.sax.ErrorHandler;
 
 import com.sun.codemodel.JAnnotationArrayMember;
 import com.sun.codemodel.JAnnotationUse;
@@ -30,7 +34,6 @@ import com.sun.tools.xjc.reader.xmlschema.bindinfo.BindInfo;
 import com.sun.xml.xsom.XSAnnotation;
 import com.sun.xml.xsom.XSSchema;
 import com.sun.xml.xsom.impl.SchemaImpl;
-import org.xml.sax.ErrorHandler;
 
 /**
  * This plugin adds {@link javax.xml.bind.annotation.XmlNs} annotations to <i>package-info.java</i> files. Those annotations tells Jaxb2 to generate XML schema's instances with specific namespaces
@@ -176,23 +179,48 @@ public class NamespacePrefixPlugin extends Plugin {
 				continue;
 			}
 
-			// get the prefix's name
-			String prefix = "";
+			Set<String> mappedPrefixes = new HashSet<String>();
+			Set<String> mappedNamespaceURIs = new HashSet<String>();
+
 			for (BIDeclaration declaration : b.getDecls()) {
 				if (declaration instanceof BIXPluginCustomization) {
 					final BIXPluginCustomization customization = (BIXPluginCustomization) declaration;
-					if (customization.element.getNamespaceURI().equals(NAMESPACE_URI)) {
-						if (!customization.element.getLocalName().equals("prefix")) {
-							throw new RuntimeException("Unrecognized element [" + customization.element.getLocalName() + "]");
-						}
-						prefix = customization.element.getAttribute("name");
-						customization.markAsAcknowledged();
-						break;
+
+					if (!customization.element.getNamespaceURI().equals(NAMESPACE_URI)) {
+						continue;
 					}
+
+					final String localName = customization.element.getLocalName();
+
+					if (!localName.equals("prefix")) {
+						throw new RuntimeException("Unrecognized element [" + localName + "]");
+					}
+
+					final String namespaceURI = customization.element.getAttribute("namespaceURI");
+
+					if (mappedNamespaceURIs.contains(namespaceURI)) {
+						throw new RuntimeException("Multiple mappings for namespaceURI [" + namespaceURI + "] detected");
+					}
+
+					mappedNamespaceURIs.add(namespaceURI);
+
+					final String prefix = customization.element.getAttribute("name");
+
+					if (mappedPrefixes.contains(prefix)) {
+						throw new RuntimeException("Multiple mappings for prefix [" + prefix + "] detected");
+					}
+
+					mappedPrefixes.add(prefix);
+
+					if (namespaceURI.isEmpty()) {
+					    list.add(new Pair(targetNS, prefix));
+					} else {
+					    list.add(new Pair(namespaceURI, prefix));
+					}
+
+					customization.markAsAcknowledged();
 				}
 			}
-
-			list.add(new Pair(targetNS, prefix));
 		}
 
 		return list;
