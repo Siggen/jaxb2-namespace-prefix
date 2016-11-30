@@ -196,7 +196,13 @@ public class NamespacePrefixPlugin extends Plugin {
 						throw new RuntimeException("Unrecognized element [" + localName + "]");
 					}
 
-					final String namespaceURI = customization.element.getAttribute("namespaceURI");
+					final String namespaceURI;
+
+					if (customization.element.hasAttribute("namespaceURI")) {
+						namespaceURI = customization.element.getAttribute("namespaceURI");
+					} else {
+						namespaceURI = targetNS;
+					}
 
 					if (mappedNamespaceURIs.contains(namespaceURI)) {
 						throw new RuntimeException("Multiple mappings for namespaceURI [" + namespaceURI + "] detected");
@@ -212,12 +218,7 @@ public class NamespacePrefixPlugin extends Plugin {
 
 					mappedPrefixes.add(prefix);
 
-					if (namespaceURI.isEmpty()) {
-					    list.add(new Pair(targetNS, prefix));
-					} else {
-					    list.add(new Pair(namespaceURI, prefix));
-					}
-
+					list.add(new Pair(namespaceURI, prefix));
 					customization.markAsAcknowledged();
 				}
 			}
