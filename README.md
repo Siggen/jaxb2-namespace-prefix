@@ -1,5 +1,5 @@
 # jaxb2-namespace-prefix
-Jaxb2 'namespace-prefix' plugin that adds `javax.xml.bind.annotation.XmlNs` annotations to `package-info.java` file according to 
+Jaxb2 'namespace-prefix' plugin that adds `javax.xml.bind.annotation.XmlNs` annotations to `package-info.java` file according to
 specific definition in the bindings.xml file. Those annotations associate namespace prefixes with XML namespace URIs.
 
 
@@ -7,7 +7,7 @@ specific definition in the bindings.xml file. Those annotations associate namesp
 
 The following package-info.java is generated automatically with the XmlNs annotation :
 
-```
+```java
 @javax.xml.bind.annotation.XmlSchema(namespace = "http://www.ech.ch/xmlns/eCH-0007/3", elementFormDefault = javax.xml.bind.annotation.XmlNsForm.QUALIFIED, xmlns = {
     @javax.xml.bind.annotation.XmlNs(namespaceURI = "http://www.ech.ch/xmlns/eCH-0007/3", prefix = "eCH-0007")
 })
@@ -16,7 +16,7 @@ package ch.ech.ech0007.v3;
 
 And then, Jaxb2 will build Xml structure that look like this :
 
-```
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <eCH-0007:municipalityRoot xmlns:eCH-0007="http://www.ech.ch/xmlns/eCH-0007/3">
     <eCH-0007:swissMunicipalityType>
@@ -27,7 +27,7 @@ And then, Jaxb2 will build Xml structure that look like this :
 
 Instead of the default prefix numbering scheme :
 
-```
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <ns1:municipalityRoot xmlns:ns1="http://www.ech.ch/xmlns/eCH-0007/3">
     <ns1:swissMunicipalityType>
@@ -40,7 +40,7 @@ Instead of the default prefix numbering scheme :
 
 Example's configuration with the maven-jaxb2-plugin :
 
-```
+```xml
 <plugin>
     <groupId>org.jvnet.jaxb2.maven2</groupId>
     <artifactId>maven-jaxb2-plugin</artifactId>
@@ -71,7 +71,7 @@ Example's configuration with the maven-jaxb2-plugin :
         <dependency>
             <groupId>org.jvnet.jaxb2_commons</groupId>
             <artifactId>jaxb2-namespace-prefix</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>1.1</version>
         </dependency>
     </dependencies>
 </plugin>
@@ -79,7 +79,7 @@ Example's configuration with the maven-jaxb2-plugin :
 
 Example of bindings.xml file :
 
-```
+```xml
 <?xml version="1.0"?>
 <jxb:bindings version="1.0"
     xmlns:jxb="http://java.sun.com/xml/ns/jaxb"
@@ -94,6 +94,8 @@ Example of bindings.xml file :
         </jxb:schemaBindings>
         <jxb:bindings>
             <namespace:prefix name="eCH-0007" />
+            <!-- Additional @XmlNs prefix declarations to take effect for this schema/package -->
+            <namespace:prefix name="xsi" namespaceURI="http://www.w3.org/2001/XMLSchema-instance" />
         </jxb:bindings>
     </jxb:bindings>
 </jxb:bindings>
@@ -101,5 +103,6 @@ Example of bindings.xml file :
 
 # Release notes
 
+ - Version 1.2 (2016.11.30) : Implemented support for multiple @XmlNs declarations within a package, controlled by the bindings file.
  - Version 1.1 (2012.06.12) : Implemented support for multiple schemas (with different namespaces) that bind to the same java package.
  - Version 1.0 (2012.06.01) : First version.
