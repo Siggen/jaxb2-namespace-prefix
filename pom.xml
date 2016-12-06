@@ -6,7 +6,7 @@
 
 	<groupId>org.jvnet.jaxb2_commons</groupId>
 	<artifactId>jaxb2-namespace-prefix</artifactId>
-	<version>1.2-SNAPSHOT</version>
+	<version>1.2</version>
 
 	<name>JAXB2 - Namespace Prefix Plugin</name>
 
