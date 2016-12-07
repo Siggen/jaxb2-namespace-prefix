@@ -58,7 +58,17 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<gpg.skip>true</gpg.skip>
 	</properties>
+
+	<profiles>
+		<profile>
+			<id>release</id>
+			<properties>
+				<gpg.skip>false</gpg.skip>
+			</properties>
+		</profile>
+	</profiles>
 
 	<build>
 		<pluginManagement>
@@ -96,6 +106,20 @@
 						<id>attach-javadocs</id>
 						<goals>
 							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-gpg-plugin</artifactId>
+				<version>1.5</version>
+				<executions>
+					<execution>
+						<id>sign-artifacts</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>sign</goal>
 						</goals>
 					</execution>
 				</executions>
