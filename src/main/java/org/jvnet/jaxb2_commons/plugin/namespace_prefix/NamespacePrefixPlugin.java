@@ -3,6 +3,7 @@ package org.jvnet.jaxb2_commons.plugin.namespace_prefix;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -18,6 +19,7 @@ import com.sun.codemodel.JAnnotationArrayMember;
 import com.sun.codemodel.JAnnotationUse;
 import com.sun.codemodel.JAnnotationValue;
 import com.sun.codemodel.JClass;
+import com.sun.codemodel.JMethod;
 import com.sun.codemodel.JPackage;
 import com.sun.codemodel.JStringLiteral;
 import com.sun.tools.xjc.Options;
@@ -88,7 +90,6 @@ public class NamespacePrefixPlugin extends Plugin {
 
 	@Override
 	public boolean run(final Outline outline, final Options options, final ErrorHandler errorHandler) {
-
 		final JClass xmlNsClass = outline.getCodeModel().ref(XmlNs.class);
 		final JClass xmlSchemaClass = outline.getCodeModel().ref(XmlSchema.class);
 
@@ -124,8 +125,32 @@ public class NamespacePrefixPlugin extends Plugin {
 	}
 
 	private static Set<String> getPackageNamespace(PackageOutline packageOutline) {
-		final Map<String, Integer> map = getUriCountMap(packageOutline);
-		return map == null ? Collections.<String>emptySet() : map.keySet();
+		final Map<String, Integer> uriCountMap = getUriCountMap(packageOutline);
+		Set<String> result = new HashSet<String>(uriCountMap == null ? Collections.<String>emptySet() : uriCountMap.keySet());
+
+		//
+		// Find annotated methods in the ObjectFactory that create elements, and extract their namespace URIs.
+		//
+		Collection<JMethod> methods = packageOutline.objectFactory().methods();
+		if (methods != null) {
+			for (JMethod method : methods) {
+				List<JAnnotationUse> annotations = getAnnotations(method);
+				if (annotations != null) {
+					for (JAnnotationUse annotation : annotations) {
+						Map<String, JAnnotationValue> map = getAnnotationMemberValues(annotation);
+						if (map != null) {
+							for (Map.Entry<String, JAnnotationValue> entry : map.entrySet()) {
+								if (entry.getKey().equals("namespace")) {
+									String ns = getStringAnnotationValue(entry.getValue());
+									result.add(ns);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return result;
 	}
 
 	/**
@@ -283,6 +308,21 @@ public class NamespacePrefixPlugin extends Plugin {
 		}
 		catch (IllegalAccessException e) {
 			throw new RuntimeException("Unable to find '_model' field for package outline [" + packageOutline._package().name() + "] : " + e.getMessage(), e);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private static List<JAnnotationUse> getAnnotations(JMethod method) {
+		try {
+			final Field annotationsField = JMethod.class.getDeclaredField("annotations");
+			annotationsField.setAccessible(true);
+			return (List<JAnnotationUse>) annotationsField.get(method);
+		}
+		catch (IllegalAccessException e) {
+			throw new RuntimeException("Unable to access 'annotations' field for method [" + method.name() + "] : " + e.getMessage(), e);
+		}
+		catch (NoSuchFieldException e) {
+			throw new RuntimeException("Unable to find 'annotations' field for method [" + method.name() + "] : " + e.getMessage(), e);
 		}
 	}
 
