@@ -126,22 +126,25 @@ public class NamespacePrefixPlugin extends Plugin {
 
 	private static Set<String> getPackageNamespace(PackageOutline packageOutline) {
 		final Map<String, Integer> uriCountMap = getUriCountMap(packageOutline);
-		Set<String> result = new HashSet<String>(uriCountMap == null ? Collections.<String>emptySet() : uriCountMap.keySet());
+		final Set<String> result = new HashSet<String>();
+		if (uriCountMap != null) {
+			result.addAll(uriCountMap.keySet());
+		}
 
 		//
 		// Find annotated methods in the ObjectFactory that create elements, and extract their namespace URIs.
 		//
-		Collection<JMethod> methods = packageOutline.objectFactory().methods();
+		final Collection<JMethod> methods = packageOutline.objectFactory().methods();
 		if (methods != null) {
 			for (JMethod method : methods) {
-				List<JAnnotationUse> annotations = getAnnotations(method);
+				final List<JAnnotationUse> annotations = getAnnotations(method);
 				if (annotations != null) {
 					for (JAnnotationUse annotation : annotations) {
-						Map<String, JAnnotationValue> map = getAnnotationMemberValues(annotation);
+						final Map<String, JAnnotationValue> map = getAnnotationMemberValues(annotation);
 						if (map != null) {
 							for (Map.Entry<String, JAnnotationValue> entry : map.entrySet()) {
 								if (entry.getKey().equals("namespace")) {
-									String ns = getStringAnnotationValue(entry.getValue());
+									final String ns = getStringAnnotationValue(entry.getValue());
 									result.add(ns);
 								}
 							}
