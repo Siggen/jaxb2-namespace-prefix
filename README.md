@@ -103,6 +103,7 @@ Example of bindings.xml file :
 
 # Release notes
 
- - Version 1.2 (2016.11.30) : Implemented support for multiple @XmlNs declarations within a package, controlled by the bindings file.
+ - Version 1.3 (2017.02.07) : Implemented support for XSDs with only element definitions and no type definition (@solind).
+ - Version 1.2 (2016.11.30) : Implemented support for multiple @XmlNs declarations within a package, controlled by the bindings file (@MikeEdgar).
  - Version 1.1 (2012.06.12) : Implemented support for multiple schemas (with different namespaces) that bind to the same java package.
  - Version 1.0 (2012.06.01) : First version.
