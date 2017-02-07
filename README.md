@@ -71,7 +71,7 @@ Example's configuration with the maven-jaxb2-plugin :
         <dependency>
             <groupId>org.jvnet.jaxb2_commons</groupId>
             <artifactId>jaxb2-namespace-prefix</artifactId>
-            <version>1.2</version>
+            <version>1.3</version>
         </dependency>
     </dependencies>
 </plugin>
