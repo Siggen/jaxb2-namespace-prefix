@@ -6,7 +6,7 @@
 
 	<groupId>org.jvnet.jaxb2_commons</groupId>
 	<artifactId>jaxb2-namespace-prefix</artifactId>
-	<version>1.4-SNAPSHOT</version>
+	<version>2.0-SNAPSHOT</version>
 
 	<name>JAXB2 - Namespace Prefix Plugin</name>
 
@@ -28,9 +28,7 @@
 	<developers>
 		<developer>
 			<name>Manuel Siggen</name>
-			<email>manuel.siggen@vd.ch</email>
-			<organization>Etat de Vaud, Département des infrastructures, Direction des systèmes d'information (DSI)</organization>
-			<organizationUrl>http://www.vd.ch</organizationUrl>
+			<email>manuel@siggen.ch</email>
 		</developer>
 	</developers>
 
