@@ -1,27 +1,6 @@
 package org.jvnet.jaxb2_commons.plugin.namespace_prefix;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.xml.bind.annotation.XmlNs;
-import javax.xml.bind.annotation.XmlSchema;
-
-import org.xml.sax.ErrorHandler;
-
-import com.sun.codemodel.JAnnotationArrayMember;
-import com.sun.codemodel.JAnnotationUse;
-import com.sun.codemodel.JAnnotationValue;
-import com.sun.codemodel.JClass;
-import com.sun.codemodel.JMethod;
-import com.sun.codemodel.JPackage;
-import com.sun.codemodel.JStringLiteral;
+import com.sun.codemodel.*;
 import com.sun.tools.xjc.Options;
 import com.sun.tools.xjc.Plugin;
 import com.sun.tools.xjc.generator.bean.PackageOutlineImpl;
@@ -36,9 +15,15 @@ import com.sun.tools.xjc.reader.xmlschema.bindinfo.BindInfo;
 import com.sun.xml.xsom.XSAnnotation;
 import com.sun.xml.xsom.XSSchema;
 import com.sun.xml.xsom.impl.SchemaImpl;
+import jakarta.xml.bind.annotation.XmlNs;
+import jakarta.xml.bind.annotation.XmlSchema;
+import org.xml.sax.ErrorHandler;
+
+import java.lang.reflect.Field;
+import java.util.*;
 
 /**
- * This plugin adds {@link javax.xml.bind.annotation.XmlNs} annotations to <i>package-info.java</i> files. Those annotations tells Jaxb2 to generate XML schema's instances with specific namespaces
+ * This plugin adds {@link jakarta.xml.bind.annotation.XmlNs} annotations to <i>package-info.java</i> files. Those annotations tells Jaxb2 to generate XML schema's instances with specific namespaces
  * prefixes, instead of the auto-generated (ns1, ns2, ...) prefixes. Definition of thoses prefixes is done in the bindings.xml file.
  * <p>
  * Bindings.xml file example:

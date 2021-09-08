@@ -1,5 +1,5 @@
 # jaxb2-namespace-prefix
-Jaxb2 'namespace-prefix' plugin that adds `javax.xml.bind.annotation.XmlNs` annotations to `package-info.java` file according to
+Jaxb2 'namespace-prefix' plugin that adds `jakarta.xml.bind.annotation.XmlNs` annotations to `package-info.java` file according to
 specific definition in the bindings.xml file. Those annotations associate namespace prefixes with XML namespace URIs.
 
 
@@ -8,8 +8,8 @@ specific definition in the bindings.xml file. Those annotations associate namesp
 The following package-info.java is generated automatically with the XmlNs annotation :
 
 ```java
-@javax.xml.bind.annotation.XmlSchema(namespace = "http://www.ech.ch/xmlns/eCH-0007/3", elementFormDefault = javax.xml.bind.annotation.XmlNsForm.QUALIFIED, xmlns = {
-    @javax.xml.bind.annotation.XmlNs(namespaceURI = "http://www.ech.ch/xmlns/eCH-0007/3", prefix = "eCH-0007")
+@jakarta.xml.bind.annotation.XmlSchema(namespace = "http://www.ech.ch/xmlns/eCH-0007/3", elementFormDefault = jakarta.xml.bind.annotation.XmlNsForm.QUALIFIED, xmlns = {
+    @jakarta.xml.bind.annotation.XmlNs(namespaceURI = "http://www.ech.ch/xmlns/eCH-0007/3", prefix = "eCH-0007")
 })
 package ch.ech.ech0007.v3;
 ```
@@ -103,6 +103,7 @@ Example of bindings.xml file :
 
 # Release notes
 
+ - Version 2.0 (pending) : Java 11 + migrated to Jakarta namespaces (https://blogs.oracle.com/javamagazine/transition-from-java-ee-to-jakarta-ee)
  - Version 1.3 (2017.02.07) : Implemented support for XSDs with only element definitions and no type definition (@solind).
  - Version 1.2 (2016.11.30) : Implemented support for multiple @XmlNs declarations within a package, controlled by the bindings file (@MikeEdgar).
  - Version 1.1 (2012.06.12) : Implemented support for multiple schemas (with different namespaces) that bind to the same java package.
